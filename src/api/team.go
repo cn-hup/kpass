@@ -4,6 +4,7 @@ import (
 	"github.com/seccom/kpass/src/auth"
 	"github.com/seccom/kpass/src/bll"
 	"github.com/seccom/kpass/src/model"
+	_ "github.com/seccom/kpass/src/schema"
 	"github.com/seccom/kpass/src/util"
 	"github.com/teambition/gear"
 )

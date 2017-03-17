@@ -11,6 +11,7 @@ KPass is a web application to manage password safe.
 1. Support multi-users
 1. Support multi-teams
 1. Support HTTPS and HTTP/2
+1. Use SHA-2, SHA-3, AES256-CTR, PBKDF2 for crypto
 1. Support secret files(TODO)
 1. Share secret to other user(TODO)
 
@@ -65,8 +66,8 @@ open http://petstore.swagger.io/?url=http://127.0.0.1:3000/swagger.json
 
 ```js
 globalHMACFn = (a, b) => HMAC(SHA256, a)(b)
-globalAESKeyFn = (a, b) => base64Encode(globalHMACFn(a + b))
-globalPBKDF2Fn = (data, iv) => PBKDF2(dbSalt, 12480, 64, HMAC(SHA512, iv))(data)
+globalAESKeyFn = (a, b) => base64Encode(globalHMACFn(a, b))
+globalPBKDF2Fn = (data, iv) => PBKDF2(dbSalt, 12480, 64, HMAC(SHA3-512, iv))(data)
 globalEncryptFn = (key, data) => {
   cipherData = AESCTR(globalHMACFn(key), IV(16), data)
   sum = HMAC(SHA1, cipherData)(data)

@@ -16,7 +16,7 @@ import (
 )
 
 // Version is app version
-const Version = "v1.0.0-alpha.1"
+const Version = "v1.0.0-alpha.2"
 
 // New returns a app instance
 func New(dbPath string, env string) *gear.App {

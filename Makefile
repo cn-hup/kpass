@@ -41,7 +41,7 @@ build-osx:
 	CGO_ENABLED=0 GOOS=darwin GOARCH=amd64 $(GO) build -a -installsuffix cgo -o dist/kpass ./cmd/kpass
 build-win:
 	CGO_ENABLED=0 GOOS=windows GOARCH=amd64 $(GO) build -a -installsuffix cgo -o dist/kpass.exe ./cmd/kpass
-build: web assets build-osx build-linux build-win
+build: web assets build-osx build-linux build-win clean
 
 swagger:
 	swaggo -s ./src/swagger.go
