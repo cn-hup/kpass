@@ -13,14 +13,16 @@ import (
 	"github.com/teambition/gear/middleware/favicon"
 	"github.com/teambition/gear/middleware/secure"
 	"github.com/teambition/gear/middleware/static"
+	"github.com/tidwall/buntdb"
 )
 
 // Version is app version
-const Version = "v1.0.0-alpha.2"
+const Version = "v1.0.0-alpha.3"
 
 // New returns a app instance
-func New(dbPath string, env string) *gear.App {
-	if env == "production" {
+func New(dbPath string) (*gear.App, *buntdb.DB) {
+	app := gear.New()
+	if app.Env() == "production" {
 		logger.Init()
 	}
 
@@ -33,7 +35,7 @@ func New(dbPath string, env string) *gear.App {
 	indexBody := "<h1>Kpass</h1>"
 	faviconBin := []byte{}
 
-	if env != "test" {
+	if app.Env() != "test" {
 		indexBody = string(MustAsset("index.html"))
 		faviconBin = MustAsset("favicon.ico")
 	}
@@ -47,11 +49,10 @@ func New(dbPath string, env string) *gear.App {
 	for _, name := range AssetNames() {
 		staticOpts.Files[name] = MustAsset(name)
 	}
-	if env == "development" {
+	if app.Env() == "development" {
 		staticOpts.Root = "./web"
 	}
 
-	app := gear.New()
 	app.Use(cors.New())
 	app.Use(secure.Default)
 	app.Use(favicon.NewWithIco(faviconBin))
@@ -70,5 +71,6 @@ func New(dbPath string, env string) *gear.App {
 	})
 	app.UseHandler(logger.Default())
 	app.UseHandler(newRouter(db))
-	return app
+
+	return app, db.DB
 }

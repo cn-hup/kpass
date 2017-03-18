@@ -13,7 +13,7 @@ import (
 )
 
 func TestSecretAPI(t *testing.T) {
-	app := src.New("", "test")
+	app, _ := src.New("")
 	srv := app.Start()
 	defer srv.Close()
 

@@ -2,10 +2,14 @@ package main
 
 import (
 	"flag"
+	"fmt"
 	"os"
 	"os/exec"
+	"os/signal"
 	"runtime"
 	"strings"
+	"sync/atomic"
+	"syscall"
 	"time"
 
 	"github.com/seccom/kpass/src"
@@ -34,20 +38,48 @@ func main() {
 		}
 	}
 
-	env := os.Getenv("APP_ENV")
-	app := src.New(*dbPath, env)
+	var state int32 = 1
+	app, db := src.New(*dbPath)
+	ac := make(chan error)
+	sc := make(chan os.Signal, 1)
+	signal.Notify(sc,
+		syscall.SIGHUP,
+		syscall.SIGINT,
+		syscall.SIGTERM,
+		syscall.SIGQUIT)
 
 	go func() {
+		if *certFile != "" && *keyFile != "" {
+			ac <- app.ListenTLS(*address, *certFile, *keyFile)
+		} else {
+			ac <- app.Listen(*address)
+		}
+	}()
+
+	go func() {
+		time.Sleep(600 * time.Millisecond)
 		host := "http://" + app.Server.Addr
 		logger.Info("Start KPass: " + host)
-		time.Sleep(time.Second)
 		startBrowser(host)
 	}()
-	if *certFile != "" && *keyFile != "" {
-		logger.Fatal(app.ListenTLS(*address, *certFile, *keyFile))
-	} else {
-		logger.Fatal(app.Listen(*address))
+
+	select {
+	case err := <-ac:
+		if err != nil && atomic.LoadInt32(&state) == 1 {
+			logger.Err(err)
+		}
+	case sig := <-sc:
+		atomic.StoreInt32(&state, 0)
+		logger.Info(fmt.Sprintf("Got signal [%d] to exit.", sig))
+		if err := app.Close(); err != nil {
+			logger.Err(err)
+		}
 	}
+
+	if err := db.Close(); err != nil {
+		logger.Err(err)
+	}
+	os.Exit(int(atomic.LoadInt32(&state)))
 }
 
 // startBrowser tries to open the URL in a browser
