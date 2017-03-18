@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist
+  SYSTEM 'file://localhost/System/Library/DTDs/PropertyList.dtd'>
+<plist version="0.9">
+	<dict>
+		<key>CFBundleExecutable</key>
+		<string>kpass</string>
+		<key>CFBundleGetInfoString</key>
+		<string>VERSION_STRING Copyright 2017 Seccom.</string>
+		<key>CFBundleIconFile</key>
+		<string>app.icns</string>
+		<key>CFBundleIdentifier</key>
+		<string>com.seccom.kpass</string>
+		<key>CFBundleInfoDictionaryVersion</key>
+		<string>1.0</string>
+		<key>CFBundleName</key>
+		<string>Kpass</string>
+		<key>CFBundlePackageType</key>
+		<string>APPL</string>
+		<key>CFBundleShortVersionString</key>
+		<string>1.0.0</string>
+		<key>CFBundleSignature</key>
+		<string>WRUN</string>
+		<key>CFBundleVersion</key>
+		<string>1.0.0.20170318</string>
+		<!-- Set LSUIElement to indicate this is an agent app, meaning that it
+		     does not get an icon in the dock. -->
+		<key>LSUIElement</key>
+		<string>1</string>
+	</dict>
+</plist>
