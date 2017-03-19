@@ -14,18 +14,14 @@
 		<key>CFBundleInfoDictionaryVersion</key>
 		<string>1.0</string>
 		<key>CFBundleName</key>
-		<string>Kpass</string>
+		<string>KPass</string>
 		<key>CFBundlePackageType</key>
 		<string>APPL</string>
 		<key>CFBundleShortVersionString</key>
 		<string>1.0.0</string>
 		<key>CFBundleSignature</key>
-		<string>WRUN</string>
+		<string>KPass</string>
 		<key>CFBundleVersion</key>
 		<string>1.0.0.20170318</string>
-		<!-- Set LSUIElement to indicate this is an agent app, meaning that it
-		     does not get an icon in the dock. -->
-		<key>LSUIElement</key>
-		<string>1</string>
 	</dict>
 </plist>
