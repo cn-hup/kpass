@@ -1,6 +1,7 @@
 package src
 
 import (
+	"bytes"
 	"regexp"
 	"strings"
 	"time"
@@ -17,10 +18,10 @@ import (
 )
 
 // Version is app version
-const Version = "v1.0.0-alpha.3"
+const Version = "v1.0.0-alpha.4"
 
 // New returns a app instance
-func New(dbPath string) (*gear.App, *buntdb.DB) {
+func New(dbPath, bindHost string) (*gear.App, *buntdb.DB) {
 	app := gear.New()
 	if app.Env() == "production" {
 		logger.Init()
@@ -48,6 +49,10 @@ func New(dbPath string) (*gear.App, *buntdb.DB) {
 	}
 	for _, name := range AssetNames() {
 		staticOpts.Files[name] = MustAsset(name)
+		if bindHost != "" && strings.HasSuffix(name, ".js") {
+			staticOpts.Files[name] = bytes.Replace(staticOpts.Files[name],
+				[]byte("http://127.0.0.1:8088"), []byte(bindHost), -1)
+		}
 	}
 	if app.Env() == "development" {
 		staticOpts.Root = "./web"

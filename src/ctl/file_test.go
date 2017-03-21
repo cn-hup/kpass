@@ -60,7 +60,7 @@ func NewUser(host string) *UserInfo {
 }
 
 func TestFileController(t *testing.T) {
-	app, _ := src.New("")
+	app, _ := src.New("", "")
 	srv := app.Start()
 	defer srv.Close()
 

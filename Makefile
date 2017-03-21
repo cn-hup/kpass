@@ -1,6 +1,7 @@
 test:
 	APP_ENV=test go test --race ./src
 	APP_ENV=test go test --race ./src/api
+	APP_ENV=test go test --race ./src/appdir
 	APP_ENV=test go test --race ./src/auth
 	APP_ENV=test go test --race ./src/ctl
 	APP_ENV=test go test --race ./src/model
@@ -13,6 +14,7 @@ cover:
 	rm -f *.coverprofile
 	APP_ENV=test go test -coverprofile=src.coverprofile ./src
 	APP_ENV=test go test -coverprofile=api.coverprofile ./src/api
+	APP_ENV=test go test -coverprofile=api.coverprofile ./src/appdir
 	APP_ENV=test go test -coverprofile=auth.coverprofile ./src/auth
 	APP_ENV=test go test -coverprofile=api.coverprofile ./src/ctl
 	APP_ENV=test go test -coverprofile=dao.coverprofile ./src/model
@@ -27,7 +29,7 @@ cover:
 GO=$(shell which go)
 
 assets:
-	go-bindata -ignore=\\.DS_Store -o ./src/bindata.go -pkg src -prefix web/dist/ web/dist/...
+	mkdir -p web/dist && go-bindata -ignore=\\.DS_Store -o ./src/bindata.go -pkg src -prefix web/dist/ web/dist/...
 clean:
 	go-bindata -ignore=\\.* -o ./src/bindata.go -pkg src web/dist/...
 web:
@@ -56,7 +58,7 @@ BUILD_DATE := $(shell date -u +%Y%m%d.%H%M%S)
 require-version:
 	@if [[ -z "$$VERSION" ]]; then echo "VERSION environment value is required."; exit 1; fi
 
-package-darwin: require-version build-darwin
+package-darwin: require-version
 	@echo "Generating distribution package for darwin/amd64..." && \
 	if [[ "$$(uname -s)" == "Darwin" ]]; then \
 		INSTALLER_RESOURCES="installer_resources/darwin" && \
