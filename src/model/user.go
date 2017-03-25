@@ -2,6 +2,7 @@ package model
 
 import (
 	"fmt"
+	"strconv"
 	"time"
 
 	"github.com/seccom/kpass/src/auth"
@@ -50,17 +51,25 @@ func (m *User) CheckLogin(id, pass string) (user *schema.User, err error) {
 		if e != nil {
 			return e
 		}
-		if user.IsBlocked || user.Attempt > 5 {
-			return &gear.Error{Code: 403, Msg: "too many login attempts"}
+
+		attempts, _ := tx.Get(schema.LoginAttemptKey(id))
+		i, _ := strconv.Atoi(attempts)
+		if user.IsBlocked {
+			return &gear.Error{Code: 403, Msg: "user blocked"}
 		}
+		if i > 5 {
+			return &gear.Error{Code: 403, Msg: "too many login attempts, please retry after 2 hours"}
+		}
+
 		if !auth.VerifyPass(id, pass, user.Pass) {
-			user.Attempt++
-			tx.Set(userKey, user.String(), nil)
+			i++
+			tx.Set(schema.LoginAttemptKey(id), strconv.Itoa(i), &buntdb.SetOptions{
+				Expires: true,
+				TTL:     2 * time.Hour,
+			})
 			return nil
-		}
-		if user.Attempt > 0 {
-			user.Attempt = 0
-			tx.Set(userKey, user.String(), nil)
+		} else if i > 0 {
+			tx.Delete(schema.LoginAttemptKey(id))
 		}
 		verified = true
 		return nil

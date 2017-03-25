@@ -9,14 +9,15 @@ import (
 
 const (
 	// KeyPrefixUser ...
-	keyPrefixUser     = "U:"
-	keyPrefixTeam     = "T:"
-	keyPrefixEntry    = "E:"
-	keyPrefixSecret   = "S:"
-	keyPrefixShare    = "SH:"
-	keyPrefixFile     = "F:"
-	keyPrefixFileBlob = "FB:"
-	keyPrefixTeamPass = "TP:"
+	keyPrefixUser         = "U:"
+	keyPrefixTeam         = "T:"
+	keyPrefixEntry        = "E:"
+	keyPrefixSecret       = "S:"
+	keyPrefixShare        = "SH:"
+	keyPrefixFile         = "F:"
+	keyPrefixFileBlob     = "FB:"
+	keyPrefixTeamPass     = "TP:"
+	keyPrefixLoginAttempt = "LA:"
 )
 
 // InitIndex ...
@@ -107,6 +108,11 @@ func FileBlobKey(ID util.OID) string {
 // TeamPassKey returns team key blob' key
 func TeamPassKey(TeamID util.OID, userID string) string {
 	return keyPrefixTeamPass + TeamID.String() + userID
+}
+
+// LoginAttemptKey returns user login attempts key
+func LoginAttemptKey(userID string) string {
+	return keyPrefixLoginAttempt + userID
 }
 
 func jsonMarshal(v interface{}) (str string) {

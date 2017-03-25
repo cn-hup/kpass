@@ -13,7 +13,6 @@ type User struct {
 	Pass      string    `json:"pass"` // encrypt
 	Avatar    util.OID  `json:"avatar"`
 	IsBlocked bool      `json:"isBlocked"`
-	Attempt   int       `json:"attempt"` // login attempts
 	Created   time.Time `json:"created"`
 	Updated   time.Time `json:"updated"`
 }

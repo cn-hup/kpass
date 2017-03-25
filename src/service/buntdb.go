@@ -26,6 +26,12 @@ func NewDB(path string) (db *DB, err error) {
 	if db.DB, err = buntdb.Open(path); err != nil {
 		return
 	}
+	if err = db.DB.SetConfig(buntdb.Config{SyncPolicy: buntdb.Always}); err != nil {
+		return
+	}
+	if err = db.DB.Shrink(); err != nil {
+		return
+	}
 	err = db.DB.Update(func(tx *buntdb.Tx) error {
 		salt, e := tx.Get(keyDBSalt)
 		if e != nil {
