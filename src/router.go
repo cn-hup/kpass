@@ -14,7 +14,7 @@ import (
 )
 
 func noOp(ctx *gear.Context) error {
-	return ctx.ErrorStatus(404)
+	return gear.ErrNotFound.WithMsg("noOp")
 }
 
 func newRouter(db *service.DB) (Router *gear.Router) {

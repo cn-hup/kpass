@@ -36,10 +36,10 @@ type tplUserJoin struct {
 
 func (t *tplUserJoin) Validate() error {
 	if len(t.ID) < 3 {
-		return &gear.Error{Code: 400, Msg: "invalid id, length of id should >= 3"}
+		return gear.ErrBadRequest.WithMsg("invalid id, length of id should >= 3")
 	}
 	if !util.IsHashString(t.Pass) {
-		return &gear.Error{Code: 400, Msg: "invalid pass, pass should be hashed by sha256"}
+		return gear.ErrBadRequest.WithMsg("invalid pass, pass should be hashed by sha256")
 	}
 	return nil
 }
@@ -57,20 +57,20 @@ func (t *tplUserJoin) Validate() error {
 func (a *User) Join(ctx *gear.Context) error {
 	body := new(tplUserJoin)
 	if err := ctx.ParseBody(body); err != nil {
-		return ctx.Error(err)
+		return gear.ErrBadRequest.From(err)
 	}
 	if err := a.models.User.CheckID(body.ID); err != nil {
-		return ctx.Error(err)
+		return gear.ErrBadRequest.From(err)
 	}
 
 	user, err := a.models.User.Create(body.ID, body.Pass)
 	if err != nil {
-		return ctx.Error(err)
+		return gear.ErrInternalServerError.From(err)
 	}
 
 	key := auth.AESKey(body.Pass, user.Pass)
 	if _, err = a.teamBll.Create(user.ID, "MY", key, "private"); err != nil {
-		return ctx.Error(err)
+		return gear.ErrInternalServerError.From(err)
 	}
 	return ctx.JSON(200, user.Result())
 }
@@ -84,13 +84,13 @@ type tplUserLogin struct {
 
 func (t *tplUserLogin) Validate() error {
 	if t.Type != "password" {
-		return &gear.Error{Code: 400, Msg: "invalid_grant"}
+		return gear.ErrBadRequest.WithMsg("invalid_grant")
 	}
 	if len(t.ID) < 3 {
-		return &gear.Error{Code: 400, Msg: "invalid id, length of id should >= 3"}
+		return gear.ErrBadRequest.WithMsg("invalid id, length of id should >= 3")
 	}
 	if !util.IsHashString(t.Pass) {
-		return &gear.Error{Code: 400, Msg: "invalid pass, pass should be hashed by sha256"}
+		return gear.ErrBadRequest.WithMsg("invalid pass, pass should be hashed by sha256")
 	}
 	return nil
 }
@@ -126,7 +126,7 @@ func (a *User) Login(ctx *gear.Context) (err error) {
 
 	token, err := auth.NewToken(user.ID, body.Pass, user.Pass)
 	if err != nil {
-		return ctx.Error(err)
+		return gear.ErrInternalServerError.From(err)
 	}
 	ctx.Set(gear.HeaderPragma, "no-cache")
 	ctx.Set(gear.HeaderCacheControl, "no-store")
@@ -151,11 +151,11 @@ func (a *User) Login(ctx *gear.Context) (err error) {
 func (a *User) Find(ctx *gear.Context) (err error) {
 	userID := ctx.Param("userID")
 	if userID == "" {
-		return ctx.ErrorStatus(400)
+		return gear.ErrBadRequest.WithMsg("invalid userID")
 	}
 	user, err := a.models.User.Find(userID)
 	if err != nil {
-		return ctx.Error(err)
+		return gear.ErrNotFound.From(err)
 	}
 	return ctx.JSON(200, user.Result())
 }
@@ -181,17 +181,17 @@ func (a *User) Password(ctx *gear.Context) (err error) {
 	spec := 2
 	if val := ctx.Query("len"); val != "" {
 		if len, err = strconv.Atoi(val); err != nil || len < 4 {
-			return ctx.ErrorStatus(400)
+			return gear.ErrBadRequest.WithMsg("invalid len")
 		}
 	}
 	if val := ctx.Query("num"); val != "" {
 		if num, err = strconv.Atoi(val); err != nil || num < 0 {
-			return ctx.ErrorStatus(400)
+			return gear.ErrBadRequest.WithMsg("invalid num")
 		}
 	}
 	if val := ctx.Query("spec"); val != "" {
 		if spec, err = strconv.Atoi(val); err != nil || spec < 0 {
-			return ctx.ErrorStatus(400)
+			return gear.ErrBadRequest.WithMsg("invalid spec")
 		}
 	}
 	return ctx.JSON(200, &PassResult{util.RandPass(len, num, spec)})

@@ -132,7 +132,7 @@ func (m *Entry) AddFileByID(EntryID, FileID util.OID, userID string) (err error)
 		}
 		entry, e := schema.EntryFrom(value)
 		if e != nil || entry.IsDeleted {
-			return &gear.Error{Code: 404, Msg: "entry not found"}
+			return gear.ErrNotFound.WithMsg("entry not found")
 		}
 
 		value, e = tx.Get(schema.TeamKey(entry.TeamID))
@@ -141,13 +141,13 @@ func (m *Entry) AddFileByID(EntryID, FileID util.OID, userID string) (err error)
 		}
 		team, e := schema.TeamFrom(value)
 		if e != nil || team.IsDeleted {
-			return &gear.Error{Code: 404, Msg: "team not found"}
+			return gear.ErrNotFound.WithMsg("team not found")
 		}
 		if !team.HasMember(userID) {
-			return &gear.Error{Code: 403, Msg: "not team member"}
+			return gear.ErrForbidden.WithMsg("not team member")
 		}
 		if team.IsFrozen {
-			return &gear.Error{Code: 403, Msg: "team is frozen"}
+			return gear.ErrForbidden.WithMsg("team is frozen")
 		}
 
 		entry.AddFile(FileID.String())
@@ -168,10 +168,10 @@ func (m *Entry) RemoveFileByID(EntryID, FileID util.OID, userID string) (err err
 		}
 		entry, e := schema.EntryFrom(value)
 		if e != nil || entry.IsDeleted {
-			return &gear.Error{Code: 404, Msg: "entry not found"}
+			return gear.ErrNotFound.WithMsg("entry not found")
 		}
 		if !entry.RemoveFile(FileID.String()) {
-			return &gear.Error{Code: 404, Msg: "file not found in the entry"}
+			return gear.ErrNotFound.WithMsg("file not found in the entry")
 		}
 
 		value, e = tx.Get(schema.TeamKey(entry.TeamID))
@@ -180,13 +180,13 @@ func (m *Entry) RemoveFileByID(EntryID, FileID util.OID, userID string) (err err
 		}
 		team, e := schema.TeamFrom(value)
 		if e != nil || team.IsDeleted {
-			return &gear.Error{Code: 404, Msg: "team not found"}
+			return gear.ErrNotFound.WithMsg("team not found")
 		}
 		if !team.HasMember(userID) {
-			return &gear.Error{Code: 403, Msg: "not team member"}
+			return gear.ErrForbidden.WithMsg("not team member")
 		}
 		if team.IsFrozen {
-			return &gear.Error{Code: 403, Msg: "team is frozen"}
+			return gear.ErrForbidden.WithMsg("team is frozen")
 		}
 
 		_, _, e = tx.Set(entryKey, entry.String(), nil)

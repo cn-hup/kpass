@@ -34,7 +34,7 @@ type tplEntryCreate struct {
 
 func (t *tplEntryCreate) Validate() error {
 	if len(t.Name) == 0 {
-		return &gear.Error{Code: 400, Msg: "entry name required"}
+		return gear.ErrBadRequest.WithMsg("entry name required")
 	}
 	return nil
 }
@@ -54,16 +54,16 @@ func (t *tplEntryCreate) Validate() error {
 func (a *Entry) Create(ctx *gear.Context) (err error) {
 	TeamID, err := util.ParseOID(ctx.Param("teamID"))
 	if err != nil {
-		return ctx.ErrorStatus(400)
+		return gear.ErrBadRequest.From(err)
 	}
 
 	body := new(tplEntryCreate)
 	if err = ctx.ParseBody(body); err != nil {
-		return ctx.Error(err)
+		return gear.ErrBadRequest.From(err)
 	}
 	userID, err := auth.UserIDFromCtx(ctx)
 	if err != nil {
-		return ctx.Error(err)
+		return gear.ErrUnauthorized.From(err)
 	}
 
 	entry, err := a.entryBll.Create(userID, &schema.Entry{
@@ -73,7 +73,7 @@ func (a *Entry) Create(ctx *gear.Context) (err error) {
 		Secrets:  []string{},
 	})
 	if err != nil {
-		return ctx.Error(err)
+		return gear.ErrInternalServerError.From(err)
 	}
 	return ctx.JSON(200, entry)
 }
@@ -90,25 +90,25 @@ func (t *tplEntryUpdate) Validate() error {
 		case "name":
 			v, ok := val.(string)
 			if !ok || v == "" {
-				return &gear.Error{Code: 400, Msg: "invalid entry name"}
+				return gear.ErrBadRequest.WithMsg("invalid entry name")
 			}
 		case "category":
 			_, ok := val.(string)
 			if !ok {
-				return &gear.Error{Code: 400, Msg: "invalid entry category"}
+				return gear.ErrBadRequest.WithMsg("invalid entry category")
 			}
 		case "priority":
 			v, ok := val.(float64)
 			if !ok || v < 0 || v > 127 {
-				return &gear.Error{Code: 400, Msg: "invalid entry priority"}
+				return gear.ErrBadRequest.WithMsg("invalid entry priority")
 			}
 		default:
-			return &gear.Error{Code: 400, Msg: "invalid entry property"}
+			return gear.ErrBadRequest.WithMsg("invalid entry property")
 		}
 	}
 
 	if empty {
-		return &gear.Error{Code: 400, Msg: "no content"}
+		return gear.ErrBadRequest.WithMsg("no content")
 	}
 	return nil
 }
@@ -129,18 +129,18 @@ func (t *tplEntryUpdate) Validate() error {
 func (a *Entry) Update(ctx *gear.Context) (err error) {
 	EntryID, err := util.ParseOID(ctx.Param("entryID"))
 	if err != nil {
-		return ctx.ErrorStatus(400)
+		return gear.ErrBadRequest.From(err)
 	}
 
 	userID, _ := auth.UserIDFromCtx(ctx)
 	body := new(tplEntryUpdate)
 	if err = ctx.ParseBody(body); err != nil {
-		return ctx.Error(err)
+		return gear.ErrBadRequest.From(err)
 	}
 
 	entrySum, err := a.entryBll.Update(userID, EntryID, *body)
 	if err != nil {
-		return ctx.Error(err)
+		return gear.ErrInternalServerError.From(err)
 	}
 	if entrySum == nil {
 		return ctx.End(204)
@@ -162,12 +162,12 @@ func (a *Entry) Update(ctx *gear.Context) (err error) {
 func (a *Entry) Delete(ctx *gear.Context) (err error) {
 	EntryID, err := util.ParseOID(ctx.Param("entryID"))
 	if err != nil {
-		return ctx.ErrorStatus(400)
+		return gear.ErrBadRequest.From(err)
 	}
 
 	userID, _ := auth.UserIDFromCtx(ctx)
 	if _, err = a.entryBll.Delete(userID, EntryID, true); err != nil {
-		return ctx.Error(err)
+		return gear.ErrInternalServerError.From(err)
 	}
 	return ctx.End(204)
 }
@@ -186,13 +186,13 @@ func (a *Entry) Delete(ctx *gear.Context) (err error) {
 func (a *Entry) Undelete(ctx *gear.Context) (err error) {
 	EntryID, err := util.ParseOID(ctx.Param("entryID"))
 	if err != nil {
-		return ctx.ErrorStatus(400)
+		return gear.ErrBadRequest.From(err)
 	}
 
 	userID, _ := auth.UserIDFromCtx(ctx)
 	entrySum, err := a.entryBll.Delete(userID, EntryID, false)
 	if err != nil {
-		return ctx.Error(err)
+		return gear.ErrInternalServerError.From(err)
 	}
 	return ctx.JSON(200, entrySum)
 }
@@ -212,16 +212,16 @@ func (a *Entry) Undelete(ctx *gear.Context) (err error) {
 func (a *Entry) Find(ctx *gear.Context) error {
 	EntryID, err := util.ParseOID(ctx.Param("entryID"))
 	if err != nil {
-		return ctx.ErrorStatus(400)
+		return gear.ErrBadRequest.From(err)
 	}
 	key, err := auth.KeyFromCtx(ctx)
 	if err != nil {
-		return ctx.Error(err)
+		return gear.ErrUnauthorized.From(err)
 	}
 	userID, _ := auth.UserIDFromCtx(ctx)
 	res, err := a.entryBll.Find(userID, key, EntryID)
 	if err != nil {
-		return ctx.Error(err)
+		return gear.ErrInternalServerError.From(err)
 	}
 
 	return ctx.JSON(200, res)
@@ -242,13 +242,13 @@ func (a *Entry) Find(ctx *gear.Context) error {
 func (a *Entry) FindByTeam(ctx *gear.Context) (err error) {
 	TeamID, err := util.ParseOID(ctx.Param("teamID"))
 	if err != nil {
-		return ctx.ErrorStatus(400)
+		return gear.ErrBadRequest.From(err)
 	}
 
 	userID, _ := auth.UserIDFromCtx(ctx)
 	res, err := a.entryBll.FindByTeam(userID, TeamID)
 	if err != nil {
-		return ctx.Error(err)
+		return gear.ErrInternalServerError.From(err)
 	}
 	return ctx.JSON(200, res)
 }
@@ -268,18 +268,18 @@ func (a *Entry) FindByTeam(ctx *gear.Context) (err error) {
 func (a *Entry) DeleteFile(ctx *gear.Context) error {
 	EntryID, err := util.ParseOID(ctx.Param("entryID"))
 	if err != nil {
-		return ctx.ErrorStatus(400)
+		return gear.ErrBadRequest.From(err)
 	}
 	FileID, err := util.ParseOID(ctx.Param("fileID"))
 	if err != nil {
-		return ctx.ErrorStatus(400)
+		return gear.ErrBadRequest.From(err)
 	}
 	userID, err := auth.UserIDFromCtx(ctx)
 	if err != nil {
-		return ctx.Error(err)
+		return gear.ErrUnauthorized.From(err)
 	}
 	if err = a.entryBll.DeleteFile(userID, EntryID, FileID); err != nil {
-		return ctx.Error(err)
+		return gear.ErrInternalServerError.From(err)
 	}
 	return ctx.End(204)
 }

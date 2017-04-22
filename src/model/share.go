@@ -73,7 +73,7 @@ func (m *Share) Delete(ShareID util.OID, userID string) error {
 		}
 		share, e := schema.ShareFrom(value)
 		if e != nil {
-			return &gear.Error{Code: 404, Msg: "share not found"}
+			return gear.ErrNotFound.WithMsg("share not found")
 		}
 
 		value, e = tx.Get(schema.TeamKey(share.TeamID))
@@ -82,13 +82,13 @@ func (m *Share) Delete(ShareID util.OID, userID string) error {
 		}
 		team, e := schema.TeamFrom(value)
 		if e != nil || team.IsDeleted {
-			return &gear.Error{Code: 404, Msg: "team not found"}
+			return gear.ErrNotFound.WithMsg("team not found")
 		}
 		if !team.HasMember(userID) {
-			return &gear.Error{Code: 403, Msg: "not team member"}
+			return gear.ErrForbidden.WithMsg("not team member")
 		}
 		// if team.IsFrozen {
-		// 	return &gear.Error{Code: 403, Msg: "team is frozen"}
+		// 	return gear.ErrForbidden.WithMsg("team is frozen")
 		// }
 		_, e = tx.Delete(shareKey)
 		return e

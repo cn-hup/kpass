@@ -46,7 +46,7 @@ func (c *File) Init(blls *bll.All) *File {
 func (c *File) Download(ctx *gear.Context) error {
 	FileID, err := util.ParseOID(ctx.Param("fileID"))
 	if err != nil {
-		return ctx.ErrorStatus(400)
+		return gear.ErrBadRequest.From(err)
 	}
 	key := ""
 	inline := true
@@ -54,52 +54,52 @@ func (c *File) Download(ctx *gear.Context) error {
 	case "user":
 		userID := ctx.Query("refID")
 		if userID == "" {
-			return ctx.ErrorStatus(400)
+			return gear.ErrBadRequest.WithMsg("invalid userID")
 		}
 		user, err := c.models.User.Find(userID)
 		if err != nil {
-			return ctx.ErrorStatus(404)
+			return gear.ErrNotFound.From(err)
 		}
 		if !FileID.Equal(user.Avatar) {
-			return ctx.ErrorStatus(400)
+			return gear.ErrBadRequest.WithMsg("invalid avatar")
 		}
 	case "team":
 		TeamID, err := util.ParseOID(ctx.Query("refID"))
 		if err != nil {
-			return ctx.ErrorStatus(400)
+			return gear.ErrBadRequest.WithMsg("invalid teamID")
 		}
 		team, err := c.models.Team.Find(TeamID, false)
 		if err != nil {
-			return ctx.ErrorStatus(404)
+			return gear.ErrNotFound.From(err)
 		}
 		if !FileID.Equal(team.Logo) {
-			return ctx.ErrorStatus(400)
+			return gear.ErrBadRequest.WithMsg("invalid logo")
 		}
 	case "entry":
 		inline = false
 		key = ctx.Query("signed")
 		EntryID, err := util.ParseOID(ctx.Query("refID"))
 		if err != nil || key == "" {
-			return ctx.ErrorStatus(400)
+			return gear.ErrBadRequest.WithMsg("invalid entryID")
 		}
 		key, err = auth.FileKeyFromSigned(FileID, key)
 		if err != nil {
-			return ctx.ErrorStatus(401)
+			return gear.ErrUnauthorized.From(err)
 		}
 		entry, err := c.models.Entry.Find(EntryID, false)
 		if err != nil {
-			return ctx.ErrorStatus(404)
+			return gear.ErrNotFound.From(err)
 		}
 		if !entry.HasFile(FileID.String()) {
-			return ctx.ErrorStatus(404)
+			return gear.ErrNotFound.WithMsg()
 		}
 	default:
-		return ctx.ErrorStatus(400)
+		return gear.ErrBadRequest.WithMsg("invalid refType")
 	}
 
 	file, blob, err := c.models.File.FindFile(FileID, key)
 	if err != nil {
-		return ctx.Error(err)
+		return gear.ErrNotFound.From(err)
 	}
 
 	return ctx.Attachment(file.Name, file.Updated, blob.Reader(), inline)
@@ -118,19 +118,19 @@ func (c *File) Download(ctx *gear.Context) error {
 func (c *File) UploadAvatar(ctx *gear.Context) error {
 	userID, err := auth.UserIDFromCtx(ctx)
 	if err != nil {
-		return ctx.Error(err)
+		return gear.ErrBadRequest.From(err)
 	}
 	user, err := c.models.User.Find(userID)
 	if err != nil {
-		return ctx.Error(err)
+		return gear.ErrNotFound.From(err)
 	}
 	file, err := c.fileFromCtx(ctx, userID, "", true)
 	if err != nil {
-		return ctx.Error(err)
+		return gear.ErrBadRequest.From(err)
 	}
 	user.Avatar = file.ID
 	if err = c.models.User.Update(user); err != nil {
-		return ctx.Error(err)
+		return gear.ErrInternalServerError.From(err)
 	}
 	return ctx.JSON(200, user.Result())
 }
@@ -149,28 +149,28 @@ func (c *File) UploadAvatar(ctx *gear.Context) error {
 func (c *File) UploadLogo(ctx *gear.Context) (err error) {
 	TeamID, err := util.ParseOID(ctx.Param("teamID"))
 	if err != nil {
-		return ctx.ErrorStatus(400)
+		return gear.ErrBadRequest.From(err)
 	}
 	userID, err := auth.UserIDFromCtx(ctx)
 	if err != nil {
-		return ctx.Error(err)
+		return gear.ErrUnauthorized.From(err)
 	}
 	team, err := c.models.Team.Find(TeamID, false)
 	if err != nil {
-		return ctx.Error(err)
+		return gear.ErrNotFound.From(err)
 	}
 	if team.UserID != userID {
-		return ctx.ErrorStatus(403)
+		return gear.ErrForbidden.WithMsg("not owner")
 	}
 
 	file, err := c.fileFromCtx(ctx, userID, "", true)
 	if err != nil {
-		return ctx.Error(err)
+		return gear.ErrBadRequest.From(err)
 	}
 	team.Logo = file.ID
 	teamResult, err := c.models.Team.Update(TeamID, team)
 	if err != nil {
-		return ctx.Error(err)
+		return gear.ErrInternalServerError.From(err)
 	}
 	return ctx.JSON(200, teamResult)
 }
@@ -190,32 +190,32 @@ func (c *File) UploadLogo(ctx *gear.Context) (err error) {
 func (c *File) UploadFile(ctx *gear.Context) (err error) {
 	EntryID, err := util.ParseOID(ctx.Param("entryID"))
 	if err != nil {
-		return ctx.ErrorStatus(400)
+		return gear.ErrBadRequest.From(err)
 	}
 
 	entry, err := c.models.Entry.Find(EntryID, false)
 	if err != nil {
-		return ctx.Error(err)
+		return gear.ErrNotFound.From(err)
 	}
 	userID, _ := auth.UserIDFromCtx(ctx)
 	if err = c.models.Team.CheckMember(entry.TeamID, userID, true); err != nil {
-		return ctx.Error(err)
+		return gear.ErrForbidden.From(err)
 	}
 
 	key, err := auth.KeyFromCtx(ctx)
 	if err != nil {
-		return ctx.Error(err)
+		return gear.ErrUnauthorized.From(err)
 	}
 	if key, err = c.models.Team.GetKey(entry.TeamID, userID, key); err != nil {
-		return ctx.Error(err)
+		return gear.ErrNotFound.From(err)
 	}
 
 	file, err := c.fileFromCtx(ctx, userID, key, false)
 	if err != nil {
-		return ctx.Error(err)
+		return gear.ErrBadRequest.From(err)
 	}
 	if err = c.models.Entry.AddFileByID(EntryID, file.ID, userID); err != nil {
-		return ctx.Error(err)
+		return gear.ErrInternalServerError.From(err)
 	}
 	file.SetDownloadURL("entry", EntryID.String())
 	return ctx.JSON(200, file)
@@ -243,7 +243,7 @@ func (c *File) fileFromCtx(ctx *gear.Context, userID, key string, checkImage boo
 			}
 		}
 	}
-	return nil, &gear.Error{Code: 400, Msg: "invalid upload request"}
+	return nil, gear.ErrBadRequest.WithMsg("invalid upload request")
 }
 
 func checkFileName(filename string, checkImage bool) error {

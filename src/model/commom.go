@@ -12,12 +12,9 @@ func dbError(err error) error {
 		return nil
 	}
 	if err == buntdb.ErrNotFound {
-		return &gear.Error{Code: 404, Msg: err.Error()}
+		return gear.ErrNotFound.WithMsg(err.Error())
 	}
-	if _, ok := err.(*gear.Error); ok {
-		return err
-	}
-	return &gear.Error{Code: 500, Msg: err.Error()}
+	return gear.ErrInternalServerError.From(err)
 }
 
 // IdsToUsers ...

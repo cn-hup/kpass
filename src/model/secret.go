@@ -59,7 +59,7 @@ func (m *Secret) Update(EntryID, SecretID util.OID, userID, key string, changes 
 		}
 		secret, e := schema.SecretFrom(value)
 		if e != nil {
-			return &gear.Error{Code: 404, Msg: "secret not found"}
+			return gear.ErrNotFound.WithMsg("secret not found")
 		}
 
 		changed := false

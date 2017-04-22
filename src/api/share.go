@@ -36,16 +36,16 @@ type tplShareCreate struct {
 
 func (t *tplShareCreate) Validate() error {
 	if t.Name == "" {
-		return &gear.Error{Code: 400, Msg: "invalid share name"}
+		return gear.ErrBadRequest.WithMsg("invalid share name")
 	}
 	if !util.IsHashString(t.Pass) {
-		return &gear.Error{Code: 400, Msg: "invalid share pass, pass should be hashed by sha256"}
+		return gear.ErrBadRequest.WithMsg("invalid share pass, pass should be hashed by sha256")
 	}
 	if t.UserID == "" {
-		return &gear.Error{Code: 400, Msg: "invalid user ID to share"}
+		return gear.ErrBadRequest.WithMsg("invalid user ID to share")
 	}
 	if t.Expire < 10 {
-		return &gear.Error{Code: 400, Msg: "invalid share expire time"}
+		return gear.ErrBadRequest.WithMsg("invalid share expire time")
 	}
 	return nil
 }
@@ -65,28 +65,28 @@ func (t *tplShareCreate) Validate() error {
 func (a *Share) Create(ctx *gear.Context) (err error) {
 	EntryID, err := util.ParseOID(ctx.Param("entryID"))
 	if err != nil {
-		return ctx.ErrorStatus(400)
+		return gear.ErrBadRequest.From(err)
 	}
 
 	body := new(tplShareCreate)
 	if err := ctx.ParseBody(body); err != nil {
-		return ctx.Error(err)
+		return gear.ErrBadRequest.From(err)
 	}
 	if err = a.models.User.CheckID(body.UserID); err != nil {
-		return ctx.Error(err)
+		return gear.ErrBadRequest.From(err)
 	}
 
 	entry, err := a.models.Entry.Find(EntryID, false)
 	if err != nil {
-		return ctx.Error(err)
+		return gear.ErrNotFound.From(err)
 	}
 	key, err := auth.KeyFromCtx(ctx)
 	if err != nil {
-		return ctx.Error(err)
+		return gear.ErrUnauthorized.From(err)
 	}
 	userID, _ := auth.UserIDFromCtx(ctx)
 	if err = a.models.Team.CheckMember(entry.TeamID, userID, true); err != nil {
-		return ctx.Error(err)
+		return gear.ErrUnauthorized.From(err)
 	}
 
 	expire := time.Duration(body.Expire) * time.Second
@@ -97,7 +97,7 @@ func (a *Share) Create(ctx *gear.Context) (err error) {
 		UserID:  body.UserID,
 	})
 	if err != nil {
-		return ctx.Error(err)
+		return gear.ErrInternalServerError.From(err)
 	}
 	return ctx.JSON(200, shareResult)
 }
@@ -106,12 +106,12 @@ func (a *Share) Create(ctx *gear.Context) (err error) {
 func (a *Share) Delete(ctx *gear.Context) (err error) {
 	ShareID, err := util.ParseOID(ctx.Param("shareID"))
 	if err != nil {
-		return ctx.ErrorStatus(400)
+		return gear.ErrBadRequest.From(err)
 	}
 
 	userID, _ := auth.UserIDFromCtx(ctx)
 	if err := a.models.Share.Delete(ShareID, userID); err != nil {
-		return ctx.Error(err)
+		return gear.ErrInternalServerError.From(err)
 	}
 	return ctx.End(204)
 }

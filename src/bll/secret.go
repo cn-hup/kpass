@@ -34,7 +34,7 @@ func (b *Secret) Update(userID, key string, EntryID, SecretID util.OID, change m
 		return nil, err
 	}
 	if !entry.HasSecret(SecretID.String()) {
-		return nil, &gear.Error{Code: 403, Msg: "secret not found in the entry"}
+		return nil, gear.ErrForbidden.WithMsg("secret not found in the entry")
 	}
 	if err = b.Models.Team.CheckMember(entry.TeamID, userID, true); err != nil {
 		return nil, err
@@ -56,7 +56,7 @@ func (b *Secret) Delete(EntryID, SecretID util.OID, userID string) error {
 		return err
 	}
 	if !entry.RemoveSecret(SecretID.String()) {
-		return &gear.Error{Code: 404, Msg: "secret not found in the entry"}
+		return gear.ErrNotFound.WithMsg("secret not found in the entry")
 	}
 	return b.Models.Secret.Delete(EntryID, SecretID, userID, entry)
 }

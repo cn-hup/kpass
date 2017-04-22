@@ -27,11 +27,11 @@ func (m *User) Init(db *service.DB) *User {
 // CheckID ...
 func (m *User) CheckID(id string) error {
 	if len(id) < 3 {
-		return &gear.Error{Code: 400, Msg: fmt.Sprintf(`invalid user id "%s"`, id)}
+		return gear.ErrBadRequest.WithMsg(fmt.Sprintf(`invalid user id "%s"`, id))
 	}
 	err := m.db.DB.View(func(tx *buntdb.Tx) error {
 		if _, e := tx.Get(schema.UserKey(id)); e == nil {
-			return &gear.Error{Code: 409, Msg: fmt.Sprintf(`user "%s" exists`, id)}
+			return gear.ErrConflict.WithMsg(fmt.Sprintf(`user "%s" exists`, id))
 		}
 		return nil
 	})
@@ -55,10 +55,10 @@ func (m *User) CheckLogin(id, pass string) (user *schema.User, err error) {
 		attempts, _ := tx.Get(schema.LoginAttemptKey(id))
 		i, _ := strconv.Atoi(attempts)
 		if user.IsBlocked {
-			return &gear.Error{Code: 403, Msg: "user blocked"}
+			return gear.ErrForbidden.WithMsg("user blocked")
 		}
 		if i > 5 {
-			return &gear.Error{Code: 403, Msg: "too many login attempts, please retry after 2 hours"}
+			return gear.ErrForbidden.WithMsg("too many login attempts, please retry after 2 hours")
 		}
 
 		if !auth.VerifyPass(id, pass, user.Pass) {
@@ -76,7 +76,7 @@ func (m *User) CheckLogin(id, pass string) (user *schema.User, err error) {
 	})
 
 	if !verified && err == nil {
-		err = &gear.Error{Code: 400, Msg: "user id or password error"}
+		err = gear.ErrBadRequest.WithMsg("user id or password error")
 	}
 	if err != nil {
 		return nil, dbError(err)
@@ -90,7 +90,7 @@ func (m *User) Create(userID, pass string) (user *schema.User, err error) {
 		userKey := schema.UserKey(userID)
 		_, e := tx.Get(userKey)
 		if e == nil {
-			return &gear.Error{Code: 409, Msg: fmt.Sprintf(`user "%s" exists`, userID)}
+			return gear.ErrConflict.WithMsg(fmt.Sprintf(`user "%s" exists`, userID))
 		}
 
 		user = &schema.User{

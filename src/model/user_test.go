@@ -18,7 +18,7 @@ func TestUserModel(t *testing.T) {
 		assert := assert.New(t)
 
 		err := userModel.CheckID("ad")
-		assert.Equal(`invalid user id "ad"`, err.Error())
+		assert.Equal(`Bad Request: invalid user id "ad"`, err.Error())
 
 		err = userModel.CheckID("admin")
 		assert.Nil(err)

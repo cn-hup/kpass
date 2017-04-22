@@ -33,7 +33,7 @@ type tplTeamCreate struct {
 
 func (t *tplTeamCreate) Validate() error {
 	if t.Name == "" {
-		return &gear.Error{Code: 400, Msg: "invalid team name"}
+		return gear.ErrBadRequest.WithMsg("invalid team name")
 	}
 	return nil
 }
@@ -52,17 +52,17 @@ func (t *tplTeamCreate) Validate() error {
 func (a *Team) Create(ctx *gear.Context) error {
 	body := new(tplTeamCreate)
 	if err := ctx.ParseBody(body); err != nil {
-		return ctx.Error(err)
+		return gear.ErrBadRequest.From(err)
 	}
 
 	key, err := auth.KeyFromCtx(ctx)
 	if err != nil {
-		return ctx.Error(err)
+		return gear.ErrUnauthorized.From(err)
 	}
 	userID, _ := auth.UserIDFromCtx(ctx)
 	res, err := a.teamBll.Create(userID, body.Name, key, "member")
 	if err != nil {
-		return ctx.Error(err)
+		return gear.ErrInternalServerError.From(err)
 	}
 	return ctx.JSON(200, res)
 }
@@ -79,20 +79,20 @@ func (t *tplTeamUpdate) Validate() error {
 		case "name":
 			v, ok := val.(string)
 			if !ok || v == "" {
-				return &gear.Error{Code: 400, Msg: "invalid team name"}
+				return gear.ErrBadRequest.WithMsg("invalid team name")
 			}
 		case "isFrozen":
 			_, ok := val.(bool)
 			if !ok {
-				return &gear.Error{Code: 400, Msg: "invalid team isFrozen"}
+				return gear.ErrBadRequest.WithMsg("invalid team isFrozen")
 			}
 		default:
-			return &gear.Error{Code: 400, Msg: "invalid team property"}
+			return gear.ErrBadRequest.WithMsg("invalid team property")
 		}
 	}
 
 	if empty {
-		return &gear.Error{Code: 400, Msg: "no content"}
+		return gear.ErrBadRequest.WithMsg("no content")
 	}
 	return nil
 }
@@ -112,21 +112,21 @@ func (t *tplTeamUpdate) Validate() error {
 func (a *Team) Update(ctx *gear.Context) (err error) {
 	TeamID, err := util.ParseOID(ctx.Param("teamID"))
 	if err != nil {
-		return ctx.ErrorStatus(400)
+		return gear.ErrBadRequest.From(err)
 	}
 
 	userID, _ := auth.UserIDFromCtx(ctx)
 	body := new(tplTeamUpdate)
 	if err = ctx.ParseBody(body); err != nil {
-		return ctx.Error(err)
+		return gear.ErrBadRequest.From(err)
 	}
 
 	team, err := a.models.Team.Find(TeamID, false)
 	if err != nil {
-		return ctx.Error(err)
+		return gear.ErrNotFound.From(err)
 	}
 	if team.UserID != userID {
-		return ctx.ErrorStatus(403)
+		return gear.ErrForbidden.WithMsg("not owner")
 	}
 
 	changed := false
@@ -151,7 +151,7 @@ func (a *Team) Update(ctx *gear.Context) (err error) {
 
 	res, err := a.models.Team.Update(TeamID, team)
 	if err != nil {
-		return ctx.Error(err)
+		return gear.ErrInternalServerError.From(err)
 	}
 	return ctx.JSON(200, res)
 }
@@ -172,16 +172,16 @@ func (a *Team) Update(ctx *gear.Context) (err error) {
 func (a *Team) RemoveMember(ctx *gear.Context) (err error) {
 	TeamID, err := util.ParseOID(ctx.Param("teamID"))
 	if err != nil {
-		return ctx.ErrorStatus(400)
+		return gear.ErrBadRequest.From(err)
 	}
 	memberID := ctx.Param("userID")
 	if memberID == "" {
-		return ctx.ErrorStatus(400)
+		return gear.ErrBadRequest.From(err)
 	}
 
 	userID, _ := auth.UserIDFromCtx(ctx)
 	if err = a.models.Team.RemoveMember(userID, memberID, TeamID); err != nil {
-		return ctx.Error(err)
+		return gear.ErrInternalServerError.From(err)
 	}
 	return ctx.End(204)
 }
@@ -200,24 +200,24 @@ func (a *Team) RemoveMember(ctx *gear.Context) (err error) {
 func (a *Team) Delete(ctx *gear.Context) (err error) {
 	TeamID, err := util.ParseOID(ctx.Param("teamID"))
 	if err != nil {
-		return ctx.ErrorStatus(400)
+		return gear.ErrBadRequest.From(err)
 	}
 
 	userID, _ := auth.UserIDFromCtx(ctx)
 	team, err := a.models.Team.Find(TeamID, false)
 	if err != nil {
-		return ctx.Error(err)
+		return gear.ErrNotFound.From(err)
 	}
 	if team.UserID != userID {
-		return ctx.ErrorStatus(403)
+		return gear.ErrForbidden.WithMsg("not owner")
 	}
 	if team.Visibility == "private" {
-		return ctx.Error(&gear.Error{Code: 403, Msg: "private team can't be deleted"})
+		return gear.ErrForbidden.WithMsg("private team can't be deleted")
 	}
 
 	team.IsDeleted = true
 	if _, err = a.models.Team.Update(TeamID, team); err != nil {
-		return ctx.Error(err)
+		return gear.ErrInternalServerError.From(err)
 	}
 	return ctx.End(204)
 }
@@ -236,22 +236,22 @@ func (a *Team) Delete(ctx *gear.Context) (err error) {
 func (a *Team) Undelete(ctx *gear.Context) (err error) {
 	TeamID, err := util.ParseOID(ctx.Param("teamID"))
 	if err != nil {
-		return ctx.ErrorStatus(400)
+		return gear.ErrBadRequest.From(err)
 	}
 
 	userID, _ := auth.UserIDFromCtx(ctx)
 	team, err := a.models.Team.Find(TeamID, true)
 	if err != nil {
-		return ctx.Error(err)
+		return gear.ErrNotFound.From(err)
 	}
 	if team.UserID != userID {
-		return ctx.ErrorStatus(403)
+		return gear.ErrForbidden.WithMsg("not owner")
 	}
 
 	team.IsDeleted = false
 	res, err := a.models.Team.Update(TeamID, team)
 	if err != nil {
-		return ctx.Error(err)
+		return gear.ErrInternalServerError.From(err)
 	}
 	return ctx.JSON(200, res)
 }
@@ -269,11 +269,11 @@ func (a *Team) Undelete(ctx *gear.Context) (err error) {
 func (a *Team) FindByMember(ctx *gear.Context) (err error) {
 	userID, err := auth.UserIDFromCtx(ctx)
 	if err != nil {
-		return ctx.Error(err)
+		return gear.ErrBadRequest.From(err)
 	}
 	teams, err := a.models.Team.FindByMemberID(userID)
 	if err != nil {
-		return ctx.Error(err)
+		return gear.ErrNotFound.From(err)
 	}
 	return ctx.JSON(200, teams)
 }
@@ -284,7 +284,7 @@ type tplTeamInvite struct {
 
 func (t *tplTeamInvite) Validate() error {
 	if t.UserID == "" {
-		return &gear.Error{Code: 400, Msg: "invalid user id"}
+		return gear.ErrBadRequest.WithMsg("invalid user id")
 	}
 	return nil
 }
@@ -296,7 +296,7 @@ type tplTeamInviteCode struct {
 
 func (t *tplTeamInviteCode) Validate() error {
 	if t.Code == "" {
-		return &gear.Error{Code: 400, Msg: "invalid invite code"}
+		return gear.ErrBadRequest.WithMsg("invalid invite code")
 	}
 	return nil
 }
@@ -316,23 +316,23 @@ func (t *tplTeamInviteCode) Validate() error {
 func (a *Team) Invite(ctx *gear.Context) (err error) {
 	TeamID, err := util.ParseOID(ctx.Param("teamID"))
 	if err != nil {
-		return ctx.ErrorStatus(400)
+		return gear.ErrBadRequest.From(err)
 	}
 
 	body := new(tplTeamInvite)
 	if err = ctx.ParseBody(body); err != nil {
-		return ctx.Error(err)
+		return gear.ErrBadRequest.From(err)
 	}
 
 	key, err := auth.KeyFromCtx(ctx)
 	if err != nil {
-		return ctx.Error(err)
+		return gear.ErrUnauthorized.From(err)
 	}
 	userID, _ := auth.UserIDFromCtx(ctx)
 
 	code, err := a.teamBll.Invite(userID, key, body.UserID, TeamID)
 	if err != nil {
-		return ctx.Error(err)
+		return gear.ErrInternalServerError.From(err)
 	}
 	return ctx.JSON(200, &tplTeamInviteCode{code})
 }
@@ -351,17 +351,17 @@ func (a *Team) Invite(ctx *gear.Context) (err error) {
 func (a *Team) Join(ctx *gear.Context) (err error) {
 	body := new(tplTeamInviteCode)
 	if err = ctx.ParseBody(body); err != nil {
-		return ctx.Error(err)
+		return gear.ErrBadRequest.From(err)
 	}
 
 	key, err := auth.KeyFromCtx(ctx)
 	if err != nil {
-		return ctx.Error(err)
+		return gear.ErrUnauthorized.From(err)
 	}
 	userID, _ := auth.UserIDFromCtx(ctx)
 	res, err := a.teamBll.Join(userID, key, body.Code)
 	if err != nil {
-		return ctx.Error(err)
+		return gear.ErrInternalServerError.From(err)
 	}
 	return ctx.JSON(200, res)
 }

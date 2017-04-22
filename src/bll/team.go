@@ -41,13 +41,13 @@ func (b *Team) Invite(ownerID, key, userID string, TeamID util.OID) (string, err
 		return "", err
 	}
 	if team.UserID != ownerID {
-		return "", &gear.Error{Code: 401, Msg: "not team owner"}
+		return "", gear.ErrUnauthorized.WithMsg("not team owner")
 	}
 	if team.HasMember(userID) {
-		return "", &gear.Error{Code: 409, Msg: "already team member"}
+		return "", gear.ErrUnauthorized.WithMsg("already team member")
 	}
 	if team.Visibility == "private" {
-		return "", &gear.Error{Code: 403, Msg: "private team"}
+		return "", gear.ErrForbidden.WithMsg("private team")
 	}
 	owner, err := b.Models.User.Find(ownerID)
 	if err != nil {
@@ -88,7 +88,7 @@ func (b *Team) Join(userID, key, token string) (*schema.TeamResult, error) {
 		return nil, err
 	}
 	if team.HasMember(userID) {
-		return nil, &gear.Error{Code: 409, Msg: "already team member"}
+		return nil, gear.ErrUnauthorized.WithMsg("already team member")
 	}
 	owner, err := b.Models.User.Find(team.UserID)
 	if err != nil {

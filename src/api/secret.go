@@ -36,7 +36,7 @@ type tplSecretCreate struct {
 
 func (t *tplSecretCreate) Validate() error {
 	if (len(t.Name) + len(t.URL) + len(t.Pass) + len(t.Note)) == 0 {
-		return &gear.Error{Code: 400, Msg: "content required"}
+		return gear.ErrBadRequest.WithMsg("content required")
 	}
 	return nil
 }
@@ -56,17 +56,17 @@ func (t *tplSecretCreate) Validate() error {
 func (a *Secret) Create(ctx *gear.Context) error {
 	EntryID, err := util.ParseOID(ctx.Param("entryID"))
 	if err != nil {
-		return ctx.ErrorStatus(400)
+		return gear.ErrBadRequest.From(err)
 	}
 
 	body := new(tplSecretCreate)
 	if err := ctx.ParseBody(body); err != nil {
-		return ctx.Error(err)
+		return gear.ErrBadRequest.From(err)
 	}
 
 	key, err := auth.KeyFromCtx(ctx)
 	if err != nil {
-		return ctx.Error(err)
+		return gear.ErrUnauthorized.From(err)
 	}
 	userID, _ := auth.UserIDFromCtx(ctx)
 
@@ -77,7 +77,7 @@ func (a *Secret) Create(ctx *gear.Context) error {
 		Note: body.Note,
 	})
 	if err != nil {
-		return ctx.Error(err)
+		return gear.ErrInternalServerError.From(err)
 	}
 	return ctx.JSON(200, secretResult)
 }
@@ -92,15 +92,15 @@ func (t *tplSecretUpdate) Validate() error {
 		switch key {
 		case "name", "url", "password", "note":
 			if _, ok := val.(string); !ok {
-				return &gear.Error{Code: 400, Msg: "invalid secret property"}
+				return gear.ErrBadRequest.WithMsg("invalid secret property")
 			}
 		default:
-			return &gear.Error{Code: 400, Msg: "invalid secret property"}
+			return gear.ErrBadRequest.WithMsg("invalid secret property")
 		}
 	}
 
 	if empty {
-		return &gear.Error{Code: 400, Msg: "no content"}
+		return gear.ErrBadRequest.WithMsg("no content")
 	}
 	return nil
 }
@@ -121,26 +121,26 @@ func (t *tplSecretUpdate) Validate() error {
 func (a *Secret) Update(ctx *gear.Context) error {
 	EntryID, err := util.ParseOID(ctx.Param("entryID"))
 	if err != nil {
-		return ctx.ErrorStatus(400)
+		return gear.ErrBadRequest.From(err)
 	}
 	SecretID, err := util.ParseOID(ctx.Param("secretID"))
 	if err != nil {
-		return ctx.ErrorStatus(400)
+		return gear.ErrBadRequest.From(err)
 	}
 
 	body := new(tplSecretUpdate)
 	if err := ctx.ParseBody(body); err != nil {
-		return ctx.Error(err)
+		return gear.ErrBadRequest.From(err)
 	}
 
 	key, err := auth.KeyFromCtx(ctx)
 	if err != nil {
-		return ctx.Error(err)
+		return gear.ErrUnauthorized.From(err)
 	}
 	userID, _ := auth.UserIDFromCtx(ctx)
 	res, err := a.secretBll.Update(userID, key, EntryID, SecretID, *body)
 	if err != nil {
-		return ctx.Error(err)
+		return gear.ErrInternalServerError.From(err)
 	}
 	return ctx.JSON(200, res)
 }
@@ -160,19 +160,19 @@ func (a *Secret) Update(ctx *gear.Context) error {
 func (a *Secret) Delete(ctx *gear.Context) error {
 	EntryID, err := util.ParseOID(ctx.Param("entryID"))
 	if err != nil {
-		return ctx.ErrorStatus(400)
+		return gear.ErrBadRequest.From(err)
 	}
 	SecretID, err := util.ParseOID(ctx.Param("secretID"))
 	if err != nil {
-		return ctx.ErrorStatus(400)
+		return gear.ErrBadRequest.From(err)
 	}
 	userID, err := auth.UserIDFromCtx(ctx)
 	if err != nil {
-		return ctx.Error(err)
+		return gear.ErrUnauthorized.From(err)
 	}
 
 	if err := a.secretBll.Delete(EntryID, SecretID, userID); err != nil {
-		return ctx.Error(err)
+		return gear.ErrInternalServerError.From(err)
 	}
 	return ctx.End(204)
 }

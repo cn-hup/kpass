@@ -113,7 +113,7 @@ func KeyFromCtx(ctx *gear.Context) (key string, err error) {
 	userID := claims.Get("id").(string)
 	key = claims.Get("key").(string)
 	if key, err = DecryptStr(HmacSum(userID), key); err != nil {
-		err = &gear.Error{Code: 403, Msg: err.Error()}
+		err = gear.ErrForbidden.WithMsg(err.Error())
 	}
 	return
 }
