@@ -2,7 +2,6 @@ package logger
 
 import (
 	"os"
-	"time"
 
 	"github.com/teambition/gear"
 	"github.com/teambition/gear/logging"
@@ -19,26 +18,6 @@ func Default() *logging.Logger {
 // Init ...
 func Init() {
 	std.SetLevel(logging.InfoLevel)
-
-	std.SetLogInit(func(log logging.Log, ctx *gear.Context) {
-		log["IP"] = ctx.IP()
-		log["Method"] = ctx.Method
-		log["URL"] = ctx.Req.URL.String()
-		log["Start"] = time.Now()
-		log["UserAgent"] = ctx.Get(gear.HeaderUserAgent)
-	})
-
-	std.SetLogConsume(func(log logging.Log, _ *gear.Context) {
-		end := time.Now()
-		log["Time"] = end.Sub(log["Start"].(time.Time)) / 1e6
-		delete(log, "Start")
-
-		if res, err := log.JSON(); err == nil {
-			std.Output(end, logging.InfoLevel, res)
-		} else {
-			std.Output(end, logging.WarningLevel, log.String())
-		}
-	})
 }
 
 // FromCtx ...

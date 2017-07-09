@@ -18,7 +18,7 @@ import (
 )
 
 // Version is app version
-const Version = "v1.0.0-alpha.4"
+const Version = "v1.0.0-alpha.5"
 
 // New returns a app instance
 func New(dbPath, bindHost string) (*gear.App, *buntdb.DB) {
