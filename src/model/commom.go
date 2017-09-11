@@ -29,8 +29,8 @@ func IdsToUsers(tx *buntdb.Tx, ids []string) (users []*schema.UserResult) {
 	return
 }
 
-// All ....
-type All struct {
+// Models ....
+type Models struct {
 	Entry  *Entry
 	File   *File
 	Secret *Secret
@@ -40,12 +40,12 @@ type All struct {
 }
 
 // Init ...
-func (a *All) Init(db *service.DB) *All {
-	a.Entry = new(Entry).Init(db)
-	a.File = new(File).Init(db)
-	a.Secret = new(Secret).Init(db)
-	a.Share = new(Share).Init(db)
-	a.Team = new(Team).Init(db)
-	a.User = new(User).Init(db)
-	return a
+func (ms *Models) Init(db *service.DB) *Models {
+	ms.Entry = new(Entry).Init(db)
+	ms.File = new(File).Init(db)
+	ms.Secret = new(Secret).Init(db)
+	ms.Share = new(Share).Init(db)
+	ms.Team = new(Team).Init(db)
+	ms.User = new(User).Init(db)
+	return ms
 }

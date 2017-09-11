@@ -4,8 +4,6 @@ import (
 	"time"
 
 	"github.com/seccom/kpass/src/auth"
-	"github.com/seccom/kpass/src/bll"
-	"github.com/seccom/kpass/src/model"
 	"github.com/seccom/kpass/src/schema"
 	"github.com/seccom/kpass/src/util"
 	"github.com/teambition/gear"
@@ -18,12 +16,12 @@ import (
 // @Accepts json
 // @Produces json
 type Share struct {
-	models *model.All
+	CommonAPI
 }
 
 // Init ...
-func (a *Share) Init(blls *bll.All) *Share {
-	a.models = blls.Models
+func (a *Share) Init(api CommonAPI) *Share {
+	a.CommonAPI = api
 	return a
 }
 

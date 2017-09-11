@@ -43,12 +43,14 @@ func New(dbPath, bindHost string) (*gear.App, *buntdb.DB) {
 
 	staticOpts := static.Options{
 		Root:        "",
-		Prefix:      "/",
-		StripPrefix: true,
+		Prefix:      "/static/",
+		StripPrefix: false,
 		Files:       make(map[string][]byte),
+		Includes:    []string{"/logo.png", "/humans.txt", "/robots.txt", "/kpass.png"},
 	}
 	for _, name := range AssetNames() {
-		staticOpts.Files[name] = MustAsset(name)
+		name = "/" + name
+		staticOpts.Files[name] = MustAsset(name[1:])
 		if bindHost != "" && strings.HasSuffix(name, ".js") {
 			staticOpts.Files[name] = bytes.Replace(staticOpts.Files[name],
 				[]byte("http://127.0.0.1:8088"), []byte(bindHost), -1)
@@ -58,24 +60,21 @@ func New(dbPath, bindHost string) (*gear.App, *buntdb.DB) {
 		staticOpts.Root = "./web"
 	}
 
-	app.Use(cors.New())
-	app.Use(secure.Default)
 	app.Use(favicon.NewWithIco(faviconBin))
-
-	staticMiddleware := static.New(staticOpts)
-
-	var routerPrefix = regexp.MustCompile(`^/(api|download|upload)/`)
-	app.Use(func(ctx *gear.Context) (err error) {
-		switch {
-		case ctx.Path == "/logo.png" || ctx.Path == "/humans.txt" || ctx.Path == "/robots.txt" || strings.HasPrefix(ctx.Path, "/static/"):
-			return staticMiddleware(ctx)
-		case ctx.Path == "/" || !routerPrefix.MatchString(ctx.Path):
-			return ctx.HTML(200, indexBody)
-		}
-		return nil
-	})
+	app.Use(static.New(staticOpts))
 	app.UseHandler(logger.Default())
-	app.UseHandler(newRouter(db))
+
+	router := newRouter(db)
+	router.Use(cors.New())
+	router.Use(secure.Default)
+	routerPrefix := regexp.MustCompile(`^/(api|download|upload)/`)
+	router.Otherwise(func(ctx *gear.Context) (err error) {
+		if routerPrefix.MatchString(ctx.Path) {
+			return ctx.ErrorStatus(404)
+		}
+		return ctx.HTML(200, indexBody)
+	})
+	app.UseHandler(router)
 
 	return app, db.DB
 }

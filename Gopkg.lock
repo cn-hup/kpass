@@ -64,14 +64,14 @@
 [[projects]]
   name = "github.com/teambition/gear"
   packages = [".","logging","middleware/cors","middleware/favicon","middleware/secure","middleware/static"]
-  revision = "7046aa8ebda0d5b458b30790564769491f1253a3"
-  version = "v1.7.6"
+  revision = "33b38ea3c8cc023acf544e8a026e3aa78e9f9383"
+  version = "v1.8.5"
 
 [[projects]]
   name = "github.com/teambition/gear-auth"
   packages = [".","jwt"]
-  revision = "8f85c8ab52f3107d0dcff7bf80b6c4a1652820a2"
-  version = "v1.5.3"
+  revision = "051309878daa45cb0a8be3acd2a357373fcbac5f"
+  version = "v1.5.4"
 
 [[projects]]
   name = "github.com/teambition/trie-mux"
@@ -89,13 +89,13 @@
   branch = "master"
   name = "github.com/tidwall/buntdb"
   packages = ["."]
-  revision = "83418750ee775aa24194606fffe7fec391975a65"
+  revision = "b67b1b8c1658cb01502801c14e33c61e6c4cbb95"
 
 [[projects]]
   branch = "master"
   name = "github.com/tidwall/gjson"
   packages = ["."]
-  revision = "c784c417818f59d6597274642d8ac1d09efc9b01"
+  revision = "be96719f990978a867f52c48f29d43f6b591da28"
 
 [[projects]]
   branch = "master"
@@ -119,17 +119,17 @@
   branch = "master"
   name = "golang.org/x/crypto"
   packages = ["pbkdf2","sha3"]
-  revision = "a48ac81e47fd6f9ed1258f3b60ae9e75f93cb7ed"
+  revision = "9ba3862cf6a5452ae579de98f9364dd2e544844c"
 
 [[projects]]
   branch = "master"
   name = "golang.org/x/net"
   packages = ["proxy"]
-  revision = "054b33e6527139ad5b1ec2f6232c3b175bd9a30c"
+  revision = "66aacef3dd8a676686c7ae3716979581e8b03c47"
 
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "a8d4139f74a89909ecdda981188b0814ef8b8824fe049aaed1f98575ee1aca8a"
+  inputs-digest = "97ae3082050fde2493b9bd2176097a73b8d9630894864d0a56756323d110babc"
   solver-name = "gps-cdcl"
   solver-version = 1

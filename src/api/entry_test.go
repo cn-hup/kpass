@@ -1,10 +1,9 @@
 package api_test
 
 import (
+	"fmt"
 	"strings"
 	"testing"
-
-	"fmt"
 
 	"github.com/DavidCai1993/request"
 	"github.com/seccom/kpass/src"

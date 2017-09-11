@@ -5,7 +5,6 @@ import (
 
 	"github.com/seccom/kpass/src/auth"
 	"github.com/seccom/kpass/src/bll"
-	"github.com/seccom/kpass/src/model"
 	"github.com/seccom/kpass/src/schema"
 	"github.com/seccom/kpass/src/util"
 	"github.com/teambition/gear"
@@ -18,14 +17,14 @@ import (
 // @Accepts json
 // @Produces json
 type User struct {
-	models  *model.All
+	CommonAPI
 	teamBll *bll.Team
 }
 
 // Init ...
-func (a *User) Init(blls *bll.All) *User {
-	a.models = blls.Models
-	a.teamBll = blls.Team
+func (a *User) Init(api CommonAPI) *User {
+	a.CommonAPI = api
+	a.teamBll = api.blls.Team
 	return a
 }
 

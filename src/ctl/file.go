@@ -20,11 +20,11 @@ import (
 // @Accepts json
 // @Produces json
 type File struct {
-	models *model.All
+	models *model.Models
 }
 
 // Init ...
-func (c *File) Init(blls *bll.All) *File {
+func (c *File) Init(blls *bll.Blls) *File {
 	c.models = blls.Models
 	return c
 }

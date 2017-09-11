@@ -7,23 +7,24 @@ import (
 
 // Bll is Business Logic Layer with all models
 type Bll struct {
-	Models *model.All
+	Models *model.Models
 }
 
-// All ...
-type All struct {
-	Models *model.All
+// Blls ...
+type Blls struct {
+	Models *model.Models
 	Team   *Team
 	Entry  *Entry
 	Secret *Secret
 }
 
 // Init ...
-func (a *All) Init(db *service.DB) *All {
-	a.Models = new(model.All).Init(db)
-	b := &Bll{a.Models}
-	a.Team = &Team{b}
-	a.Entry = &Entry{b}
-	a.Secret = &Secret{b}
-	return a
+func (bs *Blls) Init(db *service.DB) *Blls {
+	bs.Models = new(model.Models).Init(db)
+	b := &Bll{bs.Models}
+
+	bs.Team = &Team{b}
+	bs.Entry = &Entry{b}
+	bs.Secret = &Secret{b}
+	return bs
 }

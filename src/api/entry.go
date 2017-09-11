@@ -3,7 +3,6 @@ package api
 import (
 	"github.com/seccom/kpass/src/auth"
 	"github.com/seccom/kpass/src/bll"
-	"github.com/seccom/kpass/src/model"
 	"github.com/seccom/kpass/src/schema"
 	"github.com/seccom/kpass/src/util"
 	"github.com/teambition/gear"
@@ -16,14 +15,14 @@ import (
 // @Accepts json
 // @Produces json
 type Entry struct {
-	models   *model.All
+	CommonAPI
 	entryBll *bll.Entry
 }
 
 // Init ...
-func (a *Entry) Init(blls *bll.All) *Entry {
-	a.models = blls.Models
-	a.entryBll = blls.Entry
+func (a *Entry) Init(api CommonAPI) *Entry {
+	a.CommonAPI = api
+	a.entryBll = api.blls.Entry
 	return a
 }
 
